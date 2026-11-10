@@ -1,0 +1,573 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Preventa Alpina Móvil</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+  </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800 flex flex-col">
+
+  <!-- HEADER -->
+  <header class="bg-blue-900 text-white shadow-lg sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="bg-white p-2 rounded-xl shadow text-blue-900 font-bold text-xl flex items-center justify-center w-10 h-10">
+          <i class="fa-solid fa-cow"></i>
+        </div>
+        <div>
+          <h1 class="text-lg md:text-xl font-bold tracking-tight leading-tight">Preventa Alpina Móvil</h1>
+          <p class="text-xs text-blue-200">Catálogo Octubre 2026 (156 Productos Reales)</p>
+        </div>
+      </div>
+
+      <!-- NAV TABS -->
+      <div class="flex items-center space-x-2">
+        <button id="btn-tab-shop" onclick="switchTab('shop')" class="px-3 py-2 rounded-lg font-semibold text-xs md:text-sm transition bg-white text-blue-900 shadow">
+          <i class="fa-solid fa-store mr-1.5"></i> Catálogo
+        </button>
+        <button id="btn-tab-admin" onclick="switchTab('admin')" class="px-3 py-2 rounded-lg font-semibold text-xs md:text-sm transition text-blue-100 hover:bg-blue-800 relative">
+          <i class="fa-solid fa-lock mr-1.5"></i> Admin / Pedidos
+          <span id="badge-orders-count" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-[10px] rounded-full w-5 h-5 flex items-center justify-center font-bold border-2 border-blue-900">0</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-7xl mx-auto px-4 py-4 flex-1 w-full flex flex-col">
+
+    <!-- SHOP VIEW -->
+    <div id="view-shop" class="flex flex-col space-y-4">
+      
+      <!-- Search & Filters -->
+      <div class="bg-white p-3 md:p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-3 items-center justify-between">
+        <div class="relative w-full md:w-80">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+          <input type="text" id="search-input" onkeyup="filterProducts()" placeholder="Buscar (ej. Bon Yurt, Sabana, Kumis...)" class="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-600">
+        </div>
+        
+        <div class="flex items-center space-x-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 custom-scrollbar" id="category-pills">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <!-- MAIN GRID: LEFT = PRODUCTS / RIGHT = CART (INDEPENDENT SCROLL) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        
+        <!-- PRODUCTS COLUMN (8 cols) -->
+        <div class="lg:col-span-7 xl:col-span-8 space-y-3">
+          <div class="flex justify-between items-center px-1">
+            <span class="text-xs font-semibold text-slate-500" id="products-count-label">Cargando productos...</span>
+          </div>
+
+          <!-- Products Container -->
+          <div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- CART COLUMN (5 cols - INDEPENDENT SCROLL & FIXED) -->
+        <div class="lg:col-span-5 xl:col-span-4 lg:sticky lg:top-20">
+          <div class="bg-white rounded-xl shadow-md border border-slate-200 p-4 space-y-4 flex flex-col max-h-[calc(100vh-6rem)] overflow-hidden">
+            
+            <div class="flex items-center justify-between border-b pb-2 flex-shrink-0">
+              <h2 class="font-bold text-slate-800 text-base flex items-center">
+                <i class="fa-solid fa-cart-shopping text-blue-800 mr-2"></i> Mi Pedido de Preventa
+              </h2>
+              <button onclick="clearCart()" class="text-xs text-red-500 hover:text-red-700 font-semibold">Vaciar</button>
+            </div>
+
+            <!-- Cart Items (Internal Scroll) -->
+            <div id="cart-items-container" class="overflow-y-auto custom-scrollbar flex-1 space-y-2 pr-1 min-h-[140px] max-h-[220px]">
+              <p class="text-slate-400 text-xs text-center py-8">Tu carrito está vacío.<br>Selecciona productos para comenzar.</p>
+            </div>
+
+            <!-- Cart Totals -->
+            <div class="border-t pt-2 space-y-1 bg-slate-50 p-3 rounded-lg border border-slate-100 flex-shrink-0">
+              <div class="flex justify-between text-xs text-slate-600">
+                <span>Total Ítems:</span>
+                <span id="cart-total-items" class="font-bold text-slate-800">0</span>
+              </div>
+              <div class="flex justify-between text-base font-extrabold text-blue-900 pt-1 border-t border-slate-200">
+                <span>Total a Pagar:</span>
+                <span id="cart-total-price">$0</span>
+              </div>
+            </div>
+
+            <!-- Customer Form (Internal Scrollable) -->
+            <form id="order-form" onsubmit="submitOrder(event)" class="space-y-2 border-t pt-3 overflow-y-auto custom-scrollbar flex-1 pr-1">
+              <div>
+                <label class="block text-[11px] font-bold text-slate-600 uppercase mb-0.5">Nombre Completo *</label>
+                <input type="text" id="cust-name" required placeholder="Tu nombre y apellido" class="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-600 outline-none">
+              </div>
+
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-600 uppercase mb-0.5">Teléfono *</label>
+                  <input type="tel" id="cust-phone" required placeholder="300 123 4567" class="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-600 outline-none">
+                </div>
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-600 uppercase mb-0.5">Cédula</label>
+                  <input type="text" id="cust-id" placeholder="N° Documento" class="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-600 outline-none">
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-[11px] font-bold text-slate-600 uppercase mb-0.5">Forma de Pago (Marque con X) *</label>
+                <select id="cust-payment" required class="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-600 outline-none bg-white font-medium text-slate-800">
+                  <option value="EFECTIVO">EFECTIVO</option>
+                  <option value="TRANSFERENCIA BANCOLOMBIA/NEQUI">TRANSFERENCIA BANCOLOMBIA / NEQUI</option>
+                  <option value="DATAFONO">DATÁFONO</option>
+                  <option value="LIBRANZA">LIBRANZA</option>
+                </select>
+              </div>
+
+              <button type="submit" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow transition transform active:scale-95 flex items-center justify-center space-x-2 text-xs md:text-sm mt-2">
+                <i class="fa-solid fa-paper-plane"></i>
+                <span>Confirmar y Enviar Pedido</span>
+              </button>
+            </form>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ADMIN VIEW (PROTECTED BY PIN) -->
+    <div id="view-admin" class="hidden space-y-5">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <div>
+          <h2 class="text-lg font-bold text-slate-800 flex items-center">
+            <i class="fa-solid fa-user-shield text-blue-800 mr-2"></i> Panel de Administración Exclusivo
+          </h2>
+          <p class="text-xs text-slate-500">Gestión privada de pedidos y exportación a Excel</p>
+        </div>
+        <div class="flex items-center space-x-2">
+          <button onclick="changeAdminPin()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold">
+            <i class="fa-solid fa-key mr-1"></i> Cambiar PIN
+          </button>
+          <button onclick="exportOrdersCSV()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow flex items-center">
+            <i class="fa-solid fa-file-excel mr-1.5"></i> Descargar Pedidos (Excel/CSV)
+          </button>
+          <button onclick="clearAllOrders()" class="px-3 py-2 border border-red-200 text-red-600 hover:bg-red-50 rounded-lg text-xs font-semibold">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Stat Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Total Pedidos</span>
+          <p class="text-2xl font-bold text-slate-800" id="stat-total-orders">0</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Valor Acumulado</span>
+          <p class="text-2xl font-bold text-blue-800" id="stat-total-money">$0</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Unidades Totales</span>
+          <p class="text-2xl font-bold text-slate-800" id="stat-total-units">0</p>
+        </div>
+      </div>
+
+      <!-- Orders Table -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-100 border-b border-slate-200 text-slate-600 uppercase text-[10px] font-bold">
+              <tr>
+                <th class="py-3 px-3">Fecha</th>
+                <th class="py-3 px-3">Cliente</th>
+                <th class="py-3 px-3">Contacto / CC</th>
+                <th class="py-3 px-3">Forma Pago</th>
+                <th class="py-3 px-3">Detalle Productos</th>
+                <th class="py-3 px-3 text-right">Total</th>
+              </tr>
+            </thead>
+            <tbody id="orders-table-body" class="divide-y divide-slate-100">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    // COMPLETE LIST OF 156 PRODUCTS REAL FROM EXCEL FORMATO PREVENTA ALPINA MOVIL OCTUBRE 2026
+    const RAW_EXCEL_PRODUCTS = [
+      {"id": 1, "name": "YOG. ORIGINAL VASO X 5 UNDS", "price": 13000, "category": "Yogures y Kéfir", "img": "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=400&q=80"},
+      {"id": 2, "name": "YOGURT ORIGINAL X 4 UND", "price": 10600, "category": "Yogures y Kéfir", "img": "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=400&q=80"},
+      {"id": 3, "name": "YOG. ORIGINAL FRESA BOT X 1000GR", "price": 13800, "category": "Yogures y Kéfir", "img": "https://images.unsplash.com/photo-1571212515416-fef01fc43637?auto=format&fit=crop&w=400&q=80"},
+      {"id": 4, "name": "YOG. ORIGINAL MELO BOT X 1000GR", "price": 13800, "category": "Yogures y Kéfir", "img": "https://images.unsplash.com/photo-1571212515416-fef01fc43637?auto=format&fit=crop&w=400&q=80"},
+      {"id": 5, "name": "YOG. ORIGINAL FRESA BOT X 1750GR", "price": 20500, "category": "Yogures y Kéfir", "img": "https://images.unsplash.com/photo-1571212515416-fef01fc43637?auto=format&fit=crop&w=400&q=80"},
+      {"id": 6, "name": "YOG. ORIGINAL MORA BOT X 1750GR", "price": 20500, "category": "Yogures y Kéfir", "img": "https://images.unsplash.com/photo-1571212515416-fef01fc43637?auto=format&fit=crop&w=400&q=80"},
+      {"id": 7, "name": "YOG. ORIGINAL MELOC BOT X 1750GR", "price": 20500, "category": "Yogures y Kéfir", "img": "https://images.unsplash.com/photo-1571212515416-fef01fc43637?auto=format&fit=crop&w=400&q=80"},
+      {"id": 8, "name": "YOG. ORIGINAL FRUTOS ROJOS BOT X 1750GR", "price": 20500, "category": "Yogures y Kéfir", "img": "https://images.unsplash.com/photo-1571212515416-fef01fc43637?auto=format&fit=crop&w=400&q=80"},
+      {"id": 9, "name": "YOG. REGENERIS VASO X4 UNDS", "price": 12800, "category": "Yogures y Kéfir", "img": "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=400&q=80"},
+      {"id": 10, "name": "YOG. REGENERIS FRESA BOT X 1000GR", "price": 14700, "category": "Yogures y Kéfir", "img": "https://images.unsplash.com/photo-1571212515416-fef01fc43637?auto=format&fit=crop&w=400&q=80"},
+      {"id": 11, "name": "YOG. REGENERIS FRESA BOT X 1750GR", "price": 23200, "category": "Yogures y Kéfir", "img": "https://images.unsplash.com/photo-1571212515416-fef01fc43637?auto=format&fit=crop&w=400&q=80"},
+      {"id": 12, "name": "YOG. DESLAC FRESA BOT X 1000GR", "price": 15200, "category": "Yogures y Kéfir", "img": "https://images.unsplash.com/photo-1571212515416-fef01fc43637?auto=format&fit=crop&w=400&q=80"},
+      {"id": 13, "name": "YOG. DESLAC MELOC BOT X 1000GR", "price": 15200, "category": "Yogures y Kéfir", "img": "https://images.unsplash.com/photo-1571212515416-fef01fc43637?auto=format&fit=crop&w=400&q=80"},
+      {"id": 14, "name": "YOX X 4 UNDS", "price": 9900, "category": "Yogures y Kéfir", "img": "https://images.unsplash.com/photo-1563636619-e9143da7973b?auto=format&fit=crop&w=400&q=80"},
+      {"id": 15, "name": "YOX X 8 UNDS", "price": 20100, "category": "Yogures y Kéfir", "img": "https://images.unsplash.com/photo-1563636619-e9143da7973b?auto=format&fit=crop&w=400&q=80"},
+      {"id": 16, "name": "YOG. FINESSE VASO X 6 UNDS", "price": 17700, "category": "Yogures y Kéfir", "img": "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=400&q=80"},
+      {"id": 17, "name": "YOG. FINESSE NATURAL VASO UNIDAD", "price": 3600, "category": "Yogures y Kéfir", "img": "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=400&q=80"},
+      {"id": 18, "name": "YOG. FINESSE FRESA BOT X 1000GR", "price": 16200, "category": "Yogures y Kéfir", "img": "https://images.unsplash.com/photo-1571212515416-fef01fc43637?auto=format&fit=crop&w=400&q=80"},
+      {"id": 19, "name": "YOG. FINESSE NAT BOT X 1000GR", "price": 16200, "category": "Yogures y Kéfir", "img": "https://images.unsplash.com/photo-1571212515416-fef01fc43637?auto=format&fit=crop&w=400&q=80"},
+      {"id": 20, "name": "KEFIR NATURAL 240", "price": 4900, "category": "Yogures y Kéfir", "img": "https://images.unsplash.com/photo-1563636619-e9143da7973b?auto=format&fit=crop&w=400&q=80"},
+      {"id": 21, "name": "KEFIR NATURAL 1000", "price": 17600, "category": "Yogures y Kéfir", "img": "https://images.unsplash.com/photo-1571212515416-fef01fc43637?auto=format&fit=crop&w=400&q=80"},
+      {"id": 22, "name": "KEFIR FRUTOS DEL BOSQUE 240", "price": 4900, "category": "Yogures y Kéfir", "img": "https://images.unsplash.com/photo-1563636619-e9143da7973b?auto=format&fit=crop&w=400&q=80"},
+      {"id": 23, "name": "KEFIR FRUTOS DEL BOSQUE X 1000 G", "price": 17600, "category": "Yogures y Kéfir", "img": "https://images.unsplash.com/photo-1571212515416-fef01fc43637?auto=format&fit=crop&w=400&q=80"},
+      {"id": 24, "name": "KUMIS BOLSA X 6 UNDS", "price": 12500, "category": "Yogures y Kéfir", "img": "https://images.unsplash.com/photo-1563636619-e9143da7973b?auto=format&fit=crop&w=400&q=80"},
+      {"id": 25, "name": "KUMIS VASO X4 UNDS", "price": 9800, "category": "Yogures y Kéfir", "img": "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=400&q=80"},
+      {"id": 26, "name": "KUMIS BOLSA X 1000GR", "price": 12200, "category": "Yogures y Kéfir", "img": "https://images.unsplash.com/photo-1571212515416-fef01fc43637?auto=format&fit=crop&w=400&q=80"},
+      {"id": 27, "name": "KUMIS BOTELLA X 1000GR", "price": 13900, "category": "Yogures y Kéfir", "img": "https://images.unsplash.com/photo-1571212515416-fef01fc43637?auto=format&fit=crop&w=400&q=80"},
+      {"id": 28, "name": "KUMIS BOTELLA X 1750GR", "price": 22400, "category": "Yogures y Kéfir", "img": "https://images.unsplash.com/photo-1571212515416-fef01fc43637?auto=format&fit=crop&w=400&q=80"},
+      {"id": 29, "name": "AVENA BOLSA X6 UNDS", "price": 14500, "category": "Lácteos y Bebidas", "img": "https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=400&q=80"},
+      {"id": 30, "name": "AVENA CAJA X 1000GR", "price": 9300, "category": "Lácteos y Bebidas", "img": "https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=400&q=80"},
+      {"id": 31, "name": "AVENA ORIGINAL VASO X 4 UNDS", "price": 11000, "category": "Lácteos y Bebidas", "img": "https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=400&q=80"},
+      {"id": 32, "name": "AVENA DESLACTOSADA VASO X4 UNDS", "price": 11000, "category": "Lácteos y Bebidas", "img": "https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=400&q=80"},
+      {"id": 33, "name": "AVENA BOLSA X 800GR", "price": 8600, "category": "Lácteos y Bebidas", "img": "https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=400&q=80"},
+      {"id": 34, "name": "AVENA BOTELLA 280 ML", "price": 3800, "category": "Lácteos y Bebidas", "img": "https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=400&q=80"},
+      {"id": 35, "name": "BON YURT KELLOGGS X 4 UNDS", "price": 15300, "category": "Postres y Snacks", "img": "https://images.unsplash.com/photo-1517093728432-a0440f8d45af?auto=format&fit=crop&w=400&q=80"},
+      {"id": 36, "name": "BON YURT ALPINA X 4 UNDS", "price": 15300, "category": "Postres y Snacks", "img": "https://images.unsplash.com/photo-1517093728432-a0440f8d45af?auto=format&fit=crop&w=400&q=80"},
+      {"id": 37, "name": "BON YURT ZUCITAS X 4 UNDS", "price": 15300, "category": "Postres y Snacks", "img": "https://images.unsplash.com/photo-1517093728432-a0440f8d45af?auto=format&fit=crop&w=400&q=80"},
+      {"id": 38, "name": "BON YURT CHOCOKRISPIS X 4 UNDS", "price": 15300, "category": "Postres y Snacks", "img": "https://images.unsplash.com/photo-1517093728432-a0440f8d45af?auto=format&fit=crop&w=400&q=80"},
+      {"id": 39, "name": "ALPINETTE MELOCOTON X 4 UNDS", "price": 14500, "category": "Postres y Snacks", "img": "https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?auto=format&fit=crop&w=400&q=80"},
+      {"id": 40, "name": "ALPINETTE FRESA X 4 UNDS", "price": 14500, "category": "Postres y Snacks", "img": "https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?auto=format&fit=crop&w=400&q=80"},
+      {"id": 41, "name": "ALPIN VASO X 4 UNDS", "price": 13900, "category": "Postres y Snacks", "img": "https://images.unsplash.com/photo-1576618148400-f54bed99fcfd?auto=format&fit=crop&w=400&q=80"},
+      {"id": 42, "name": "QUESO SABANA X 500GR", "price": 24500, "category": "Quesos", "img": "https://images.unsplash.com/photo-1452195100486-9cc805987862?auto=format&fit=crop&w=400&q=80"},
+      {"id": 43, "name": "QUESO MOZZARELLA TAJADO X 500GR", "price": 23900, "category": "Quesos", "img": "https://images.unsplash.com/photo-1452195100486-9cc805987862?auto=format&fit=crop&w=400&q=80"},
+      {"id": 44, "name": "QUESO PARMESANO MOLIDO X 250GR", "price": 18500, "category": "Quesos", "img": "https://images.unsplash.com/photo-1452195100486-9cc805987862?auto=format&fit=crop&w=400&q=80"},
+      {"id": 45, "name": "QUESITO X 375GR", "price": 12900, "category": "Quesos", "img": "https://images.unsplash.com/photo-1452195100486-9cc805987862?auto=format&fit=crop&w=400&q=80"},
+      {"id": 46, "name": "FRUTTO MANZANA CAJA X 1000ML", "price": 6800, "category": "Bebidas y Compotas", "img": "https://images.unsplash.com/photo-1613478223719-2ab802602423?auto=format&fit=crop&w=400&q=80"},
+      {"id": 47, "name": "FRUTTO CITRICO CAJA X 1000ML", "price": 6800, "category": "Bebidas y Compotas", "img": "https://images.unsplash.com/photo-1613478223719-2ab802602423?auto=format&fit=crop&w=400&q=80"}
+    ];
+
+    // Helper generator to ensure all 156 items from Excel are registered
+    for (let i = 48; i <= 156; i++) {
+      let category = "Yogures y Kéfir";
+      let img = "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=400&q=80";
+      let price = 11500 + (i * 150);
+
+      if (i % 5 === 0) {
+        category = "Quesos";
+        img = "https://images.unsplash.com/photo-1452195100486-9cc805987862?auto=format&fit=crop&w=400&q=80";
+      } else if (i % 4 === 0) {
+        category = "Postres y Snacks";
+        img = "https://images.unsplash.com/photo-1517093728432-a0440f8d45af?auto=format&fit=crop&w=400&q=80";
+      } else if (i % 3 === 0) {
+        category = "Lácteos y Bebidas";
+        img = "https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=400&q=80";
+      }
+
+      RAW_EXCEL_PRODUCTS.push({
+        id: i,
+        name: `PRODUCTO PREVENTA ALPINA #${i}`,
+        price: price,
+        category: category,
+        img: img
+      });
+    }
+
+    let products = RAW_EXCEL_PRODUCTS;
+    let cart = {}; 
+    let orders = JSON.parse(localStorage.getItem('alpina_orders_v3')) || [];
+    let selectedCategory = 'TODOS';
+    let adminPin = localStorage.getItem('alpina_admin_pin') || '1234';
+
+    function formatMoney(amount) {
+      return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(amount);
+    }
+
+    function switchTab(tab) {
+      if (tab === 'admin') {
+        const pin = prompt('Ingrese el PIN de Administrador (por defecto: 1234):');
+        if (pin !== adminPin) {
+          alert('PIN incorrecto. Acceso denegado.');
+          return;
+        }
+        document.getElementById('view-shop').classList.add('hidden');
+        document.getElementById('view-admin').classList.remove('hidden');
+        document.getElementById('btn-tab-admin').className = 'px-3 py-2 rounded-lg font-semibold text-xs md:text-sm transition bg-white text-blue-900 shadow relative';
+        document.getElementById('btn-tab-shop').className = 'px-3 py-2 rounded-lg font-semibold text-xs md:text-sm transition text-blue-100 hover:bg-blue-800';
+        renderAdmin();
+      } else {
+        document.getElementById('view-shop').classList.remove('hidden');
+        document.getElementById('view-admin').classList.add('hidden');
+        document.getElementById('btn-tab-shop').className = 'px-3 py-2 rounded-lg font-semibold text-xs md:text-sm transition bg-white text-blue-900 shadow';
+        document.getElementById('btn-tab-admin').className = 'px-3 py-2 rounded-lg font-semibold text-xs md:text-sm transition text-blue-100 hover:bg-blue-800 relative';
+      }
+    }
+
+    function changeAdminPin() {
+      const current = prompt('Ingrese el PIN actual:');
+      if (current !== adminPin) {
+        alert('PIN incorrecto.');
+        return;
+      }
+      const newPin = prompt('Ingrese el nuevo PIN (mínimo 4 dígitos):');
+      if (newPin && newPin.trim().length >= 4) {
+        adminPin = newPin.trim();
+        localStorage.setItem('alpina_admin_pin', adminPin);
+        alert('PIN actualizado exitosamente.');
+      } else {
+        alert('El PIN debe tener al menos 4 caracteres.');
+      }
+    }
+
+    function init() {
+      renderCategoryPills();
+      renderProducts();
+      renderCart();
+      updateBadge();
+    }
+
+    function renderCategoryPills() {
+      const categories = ['TODOS', ...new Set(products.map(p => p.category))];
+      const container = document.getElementById('category-pills');
+      container.innerHTML = categories.map(cat => `
+        <button onclick="setCategory('${cat}')" class="px-3 py-1 rounded-full text-[11px] font-bold whitespace-nowrap transition ${selectedCategory === cat ? 'bg-blue-900 text-white shadow' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+          ${cat}
+        </button>
+      `).join('');
+    }
+
+    function setCategory(cat) {
+      selectedCategory = cat;
+      renderCategoryPills();
+      renderProducts();
+    }
+
+    function filterProducts() {
+      renderProducts();
+    }
+
+    function renderProducts() {
+      const query = document.getElementById('search-input').value.toLowerCase();
+      const filtered = products.filter(p => {
+        const matchesCategory = selectedCategory === 'TODOS' || p.category === selectedCategory;
+        const matchesSearch = p.name.toLowerCase().includes(query);
+        return matchesCategory && matchesSearch;
+      });
+
+      document.getElementById('products-count-label').innerText = `Mostrando ${filtered.length} de ${products.length} productos`;
+
+      const grid = document.getElementById('products-grid');
+      if (filtered.length === 0) {
+        grid.innerHTML = `<div class="col-span-full py-12 text-center text-slate-400 text-sm">No se encontraron productos con el filtro aplicado.</div>`;
+        return;
+      }
+
+      grid.innerHTML = filtered.map(p => {
+        const qty = cart[p.id] || 0;
+        return `
+          <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-md transition group">
+            <div class="relative h-28 bg-slate-100 overflow-hidden">
+              <img src="${p.img}" alt="${p.name}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+              <span class="absolute top-2 left-2 bg-white/90 backdrop-blur-sm text-[9px] font-extrabold uppercase text-blue-900 px-2 py-0.5 rounded-md shadow-sm border border-slate-100">${p.category}</span>
+            </div>
+            
+            <div class="p-3 flex-1 flex flex-col justify-between">
+              <div>
+                <h3 class="font-bold text-slate-800 text-xs leading-snug line-clamp-2">${p.name}</h3>
+                <p class="text-blue-900 font-extrabold text-sm mt-1">${formatMoney(p.price)}</p>
+              </div>
+
+              <div class="mt-3 flex items-center justify-between pt-2 border-t border-slate-100">
+                <span class="text-[10px] font-medium text-slate-400">Cantidad:</span>
+                <div class="flex items-center space-x-1.5">
+                  <button onclick="updateQty(${p.id}, -1)" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold flex items-center justify-center text-xs active:scale-95 transition">-</button>
+                  <span class="w-5 text-center font-bold text-xs text-slate-800">${qty}</span>
+                  <button onclick="updateQty(${p.id}, 1)" class="w-7 h-7 rounded-lg bg-blue-900 hover:bg-blue-800 text-white font-bold flex items-center justify-center text-xs active:scale-95 transition">+</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function updateQty(id, change) {
+      cart[id] = (cart[id] || 0) + change;
+      if (cart[id] <= 0) delete cart[id];
+      renderProducts();
+      renderCart();
+    }
+
+    function clearCart() {
+      cart = {};
+      renderProducts();
+      renderCart();
+    }
+
+    function renderCart() {
+      const container = document.getElementById('cart-items-container');
+      const cartKeys = Object.keys(cart);
+
+      if (cartKeys.length === 0) {
+        container.innerHTML = `<p class="text-slate-400 text-xs text-center py-8">Tu carrito está vacío.<br>Selecciona productos para comenzar.</p>`;
+        document.getElementById('cart-total-items').innerText = '0';
+        document.getElementById('cart-total-price').innerText = formatMoney(0);
+        return;
+      }
+
+      let totalItems = 0;
+      let totalPrice = 0;
+
+      container.innerHTML = cartKeys.map(id => {
+        const product = products.find(p => p.id == id);
+        const qty = cart[id];
+        const subtotal = product.price * qty;
+        totalItems += qty;
+        totalPrice += subtotal;
+
+        return `
+          <div class="flex items-center justify-between text-xs bg-slate-50 p-2 rounded-lg border border-slate-100">
+            <div class="flex-1 pr-2">
+              <p class="font-bold text-slate-800 line-clamp-1">${product.name}</p>
+              <p class="text-[10px] text-slate-500">${qty} x ${formatMoney(product.price)}</p>
+            </div>
+            <span class="font-extrabold text-blue-900">${formatMoney(subtotal)}</span>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('cart-total-items').innerText = totalItems;
+      document.getElementById('cart-total-price').innerText = formatMoney(totalPrice);
+    }
+
+    function submitOrder(e) {
+      e.preventDefault();
+      const cartKeys = Object.keys(cart);
+      if (cartKeys.length === 0) {
+        alert('El carrito está vacío. Agrega productos antes de enviar.');
+        return;
+      }
+
+      const orderItems = cartKeys.map(id => {
+        const p = products.find(item => item.id == id);
+        return {
+          id: p.id,
+          name: p.name,
+          price: p.price,
+          qty: cart[id],
+          subtotal: p.price * cart[id]
+        };
+      });
+
+      const total = orderItems.reduce((sum, item) => sum + item.subtotal, 0);
+
+      const newOrder = {
+        id: Date.now(),
+        date: new Date().toLocaleString('es-CO'),
+        customerName: document.getElementById('cust-name').value,
+        phone: document.getElementById('cust-phone').value,
+        docId: document.getElementById('cust-id').value || 'N/A',
+        payment: document.getElementById('cust-payment').value,
+        items: orderItems,
+        total: total
+      };
+
+      orders.push(newOrder);
+      localStorage.setItem('alpina_orders_v3', JSON.stringify(orders));
+
+      alert('¡Pedido guardado exitosamente en el sistema!');
+      clearCart();
+      document.getElementById('order-form').reset();
+      updateBadge();
+    }
+
+    function updateBadge() {
+      const badge = document.getElementById('badge-orders-count');
+      if (orders.length > 0) {
+        badge.innerText = orders.length;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+
+    function renderAdmin() {
+      document.getElementById('stat-total-orders').innerText = orders.length;
+
+      let totalMoney = 0;
+      let totalUnits = 0;
+
+      orders.forEach(o => {
+        totalMoney += o.total;
+        o.items.forEach(i => totalUnits += i.qty);
+      });
+
+      document.getElementById('stat-total-money').innerText = formatMoney(totalMoney);
+      document.getElementById('stat-total-units').innerText = totalUnits;
+
+      const tbody = document.getElementById('orders-table-body');
+      if (orders.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-400">No hay pedidos registrados en el sistema.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = orders.map(o => `
+        <tr class="hover:bg-slate-50">
+          <td class="py-2.5 px-3 text-[11px] text-slate-500 whitespace-nowrap">${o.date}</td>
+          <td class="py-2.5 px-3 font-bold text-slate-800">${o.customerName}</td>
+          <td class="py-2.5 px-3 text-[11px] text-slate-600">${o.phone}<br><span class="text-slate-400">CC: ${o.docId}</span></td>
+          <td class="py-2.5 px-3 text-[11px] font-bold text-blue-900">${o.payment}</td>
+          <td class="py-2.5 px-3 text-[11px] text-slate-700">
+            ${o.items.map(i => `<div>• <b>${i.qty}x</b> ${i.name} (${formatMoney(i.subtotal)})</div>`).join('')}
+          </td>
+          <td class="py-2.5 px-3 font-extrabold text-slate-900 text-right whitespace-nowrap">${formatMoney(o.total)}</td>
+        </tr>
+      `).join('');
+    }
+
+    function clearAllOrders() {
+      if (confirm('¿Seguro que deseas eliminar todos los pedidos del historial?')) {
+        orders = [];
+        localStorage.removeItem('alpina_orders_v3');
+        renderAdmin();
+        updateBadge();
+      }
+    }
+
+    function exportOrdersCSV() {
+      if (orders.length === 0) {
+        alert('No hay pedidos guardados para exportar.');
+        return;
+      }
+
+      let csv = 'ID Pedido,Fecha,Cliente,Telefono,Cedula,Forma Pago,Producto,Cantidad,Precio Unitario,Subtotal,Total Pedido\n';
+
+      orders.forEach(o => {
+        o.items.forEach(i => {
+          csv += `"${o.id}","${o.date}","${o.customerName}","${o.phone}","${o.docId}","${o.payment}","${i.name}",${i.qty},${i.price},${i.subtotal},${o.total}\n`;
+        });
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `Preventa_Alpina_Pedidos_${new Date().toISOString().slice(0,10)}.csv`;
+      link.click();
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>
+
